@@ -1,13 +1,24 @@
 document.addEventListener('DOMContentLoaded', (event) => {
-    // Firebase конфигурация
-    const firebaseConfig = {
-        apiKey: "YOUR_API_KEY",
-        authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-        projectId: "YOUR_PROJECT_ID",
-        storageBucket: "YOUR_PROJECT_ID.appspot.com",
-        messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-        appId: "YOUR_APP_ID"
-    };
+  // Import the functions you need from the SDKs you need
+
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyBNXPiY0MeIOKZNFd2FdGxe_TwzjVt4y1E",
+    authDomain: "orgdiary-a1469.firebaseapp.com",
+    projectId: "orgdiary-a1469",
+    storageBucket: "orgdiary-a1469.appspot.com",
+    messagingSenderId: "423946670638",
+    appId: "1:423946670638:web:e3f2b57ed352e4c76d85bf",
+    measurementId: "G-MY5BXCB8S2"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
     // Инициализация Firebase
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
