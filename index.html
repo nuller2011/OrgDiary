@@ -7,6 +7,31 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/magic/1.1.0/magic.min.css">
     <link rel="stylesheet" href="styles.css">
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-analytics.js";
+        // TODO: Add SDKs for Firebase products that you want to use
+        // https://firebase.google.com/docs/web/setup#available-libraries
+      
+        // Your web app's Firebase configuration
+        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+        const firebaseConfig = {
+          apiKey: "AIzaSyBNXPiY0MeIOKZNFd2FdGxe_TwzjVt4y1E",
+          authDomain: "orgdiary-a1469.firebaseapp.com",
+          projectId: "orgdiary-a1469",
+          storageBucket: "orgdiary-a1469.appspot.com",
+          messagingSenderId: "423946670638",
+          appId: "1:423946670638:web:e3f2b57ed352e4c76d85bf",
+          measurementId: "G-MY5BXCB8S2"
+        };
+      
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+      </script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.0/firebase-firestore.js"></script>
 </head>
 <body class="bg-dark text-white">
     <header class="bg-primary text-white text-center py-3 shadow">
@@ -60,4 +85,3 @@
     <script src="script.js"></script>
 </body>
 </html>
-
