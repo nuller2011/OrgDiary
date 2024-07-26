@@ -12,13 +12,20 @@ document.addEventListener('DOMContentLoaded', (event) => {
     const shareModal = document.getElementById('shareModal');
     const shareLink = document.getElementById('shareLink');
     const copyLinkButton = document.getElementById('copyLink');
+    const viewEntrySection = document.getElementById('view-entry');
+    const viewEntryContent = document.getElementById('view-entry-content');
     let isEditing = false;
     let editIndex = null;
 
     // Проверка наличия пароля в localStorage
     const storedPassword = localStorage.getItem('diaryPassword');
 
-    if (storedPassword) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const entryId = urlParams.get('entryId');
+
+    if (entryId) {
+        viewEntry(entryId);
+    } else if (storedPassword) {
         passwordLoginDiv.classList.remove('d-none');
     } else {
         const password = prompt('Установите пароль для дневника:');
@@ -130,9 +137,10 @@ document.addEventListener('DOMContentLoaded', (event) => {
     function loadEntries() {
         const entries = JSON.parse(localStorage.getItem('entries')) || [];
         entriesList.innerHTML = '';
+
         entries.forEach((entry, index) => {
             const entryDiv = document.createElement('div');
-            entryDiv.className = 'entry list-group-item list-group-item-action';
+            entryDiv.className = 'entry list-group-item list-group-item-action bg-secondary text-white';
             entryDiv.innerHTML = `
                 <p>${entry.text}</p>
                 ${entry.image ? `<img src="${entry.image}" alt="Entry Image">` : ''}
@@ -151,7 +159,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
             entryDiv.querySelector('.edit-entry').addEventListener('click', () => {
                 entryText.value = entry.text;
-                // Для редактирования изображений можно добавить дополнительные обработки
                 isEditing = true;
                 editIndex = index;
                 saveEntryButton.textContent = 'Обновить запись';
@@ -174,25 +181,32 @@ document.addEventListener('DOMContentLoaded', (event) => {
         alert('Ссылка скопирована в буфер обмена!');
     });
 
-    // Проверка наличия параметра entryId в URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const entryId = urlParams.get('entryId');
-    if (entryId) {
+    // Функция для просмотра записи
+    function viewEntry(entryId) {
         const entries = JSON.parse(localStorage.getItem('entries')) || [];
         const entry = entries.find(e => e.id === entryId);
         if (entry) {
             passwordLoginDiv.classList.add('d-none');
             newEntrySection.classList.add('d-none');
-            entriesSection.classList.remove('d-none');
-            entriesList.innerHTML = '';
-            const entryDiv = document.createElement('div');
-            entryDiv.className = 'entry list-group-item list-group-item-action';
-            entryDiv.innerHTML = `
+            entriesSection.classList.add('d-none');
+            viewEntrySection.classList.remove('d-none');
+            viewEntryContent.innerHTML = `
                 <p>${entry.text}</p>
                 ${entry.image ? `<img src="${entry.image}" alt="Entry Image">` : ''}
                 <small class="text-muted">${entry.date}</small>
             `;
-            entriesList.appendChild(entryDiv);
+        } else {
+            alert('Запись не найдена');
         }
     }
+
+    // Инициализация загрузки записей при запуске
+    if (!entryId && storedPassword && !passwordLoginDiv.classList.contains('d-none')) {
+        passwordLoginDiv.classList.remove('d-none');
+    } else if (!entryId) {
+        newEntrySection.classList.remove('d-none');
+        entriesSection.classList.remove('d-none');
+        loadEntries();
+    }
 });
+
