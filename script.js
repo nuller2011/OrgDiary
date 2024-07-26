@@ -1,4 +1,17 @@
 document.addEventListener('DOMContentLoaded', (event) => {
+    // Firebase конфигурация
+    const firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+        projectId: "YOUR_PROJECT_ID",
+        storageBucket: "YOUR_PROJECT_ID.appspot.com",
+        messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+        appId: "YOUR_APP_ID"
+    };
+    // Инициализация Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
     const saveEntryButton = document.getElementById('save-entry');
     const entryText = document.getElementById('entry-text');
     const entryImage = document.getElementById('entry-image');
@@ -76,101 +89,104 @@ document.addEventListener('DOMContentLoaded', (event) => {
         }
     });
 
-    // Функция для сохранения записи в localStorage
+    // Функция для сохранения записи в Firestore
     function saveEntry(text, imageFile) {
-        const entries = JSON.parse(localStorage.getItem('entries')) || [];
+        if (imageFile) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                db.collection('entries').add({
+                    text: text,
+                    image: event.target.result,
+                    date: new Date().toLocaleString()
+                }).then(() => {
+                    loadEntries();
+                });
+            };
+            reader.readAsDataURL(imageFile);
+        } else {
+            db.collection('entries').add({
+                text: text,
+                image: null,
+                date: new Date().toLocaleString()
+            }).then(() => {
+                loadEntries();
+            });
+        }
+    }
+
+    // Функция для обновления записи в Firestore
+    function updateEntry(id, text, imageFile) {
+        const entryRef = db.collection('entries').doc(id);
 
         if (imageFile) {
             const reader = new FileReader();
             reader.onload = (event) => {
-                const entryId = generateUniqueId();
-                entries.push({ id: entryId, text: text, image: event.target.result, date: new Date().toLocaleString() });
-                localStorage.setItem('entries', JSON.stringify(entries));
-                loadEntries();
+                entryRef.update({
+                    text: text,
+                    image: event.target.result,
+                    date: new Date().toLocaleString()
+                }).then(() => {
+                    loadEntries();
+                });
             };
             reader.readAsDataURL(imageFile);
         } else {
-            const entryId = generateUniqueId();
-            entries.push({ id: entryId, text: text, image: null, date: new Date().toLocaleString() });
-            localStorage.setItem('entries', JSON.stringify(entries));
-            loadEntries();
-        }
-    }
-
-    // Функция для генерации уникального идентификатора
-    function generateUniqueId() {
-        return 'entry-' + Math.random().toString(36).substr(2, 9);
-    }
-
-    // Функция для обновления записи в localStorage
-    function updateEntry(index, text, imageFile) {
-        const entries = JSON.parse(localStorage.getItem('entries')) || [];
-
-        if (imageFile) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                entries[index].text = text;
-                entries[index].image = event.target.result;
-                entries[index].date = new Date().toLocaleString();
-                localStorage.setItem('entries', JSON.stringify(entries));
+            entryRef.update({
+                text: text,
+                image: null,
+                date: new Date().toLocaleString()
+            }).then(() => {
                 loadEntries();
-            };
-            reader.readAsDataURL(imageFile);
-        } else {
-            entries[index].text = text;
-            entries[index].image = entries[index].image; // Сохраняем текущее изображение
-            entries[index].date = new Date().toLocaleString();
-            localStorage.setItem('entries', JSON.stringify(entries));
-            loadEntries();
+            });
         }
     }
 
-    // Функция для удаления записи из localStorage
-    function deleteEntry(index) {
-        const entries = JSON.parse(localStorage.getItem('entries')) || [];
-        entries.splice(index, 1);
-        localStorage.setItem('entries', JSON.stringify(entries));
-        loadEntries();
+    // Функция для удаления записи из Firestore
+    function deleteEntry(id) {
+        db.collection('entries').doc(id).delete().then(() => {
+            loadEntries();
+        });
     }
 
-    // Функция для загрузки записей из localStorage
+    // Функция для загрузки записей из Firestore
     function loadEntries() {
-        const entries = JSON.parse(localStorage.getItem('entries')) || [];
-        entriesList.innerHTML = '';
+        db.collection('entries').orderBy('date', 'desc').get().then((querySnapshot) => {
+            entriesList.innerHTML = '';
+            querySnapshot.forEach((doc) => {
+                const entry = doc.data();
+                const entryDiv = document.createElement('div');
+                entryDiv.className = 'entry list-group-item list-group-item-action bg-secondary text-white';
+                entryDiv.innerHTML = `
+                    <p>${entry.text}</p>
+                    ${entry.image ? `<img src="${entry.image}" alt="Entry Image">` : ''}
+                    <small class="text-muted">${entry.date}</small>
+                    <div class="entry-actions mt-2">
+                        <button class="btn btn-primary btn-sm edit-entry">Редактировать</button>
+                        <button class="btn btn-danger btn-sm delete-entry">Удалить</button>
+                        <button class="btn btn-secondary btn-sm share-entry">Поделиться</button>
+                    </div>
+                `;
 
-        entries.forEach((entry, index) => {
-            const entryDiv = document.createElement('div');
-            entryDiv.className = 'entry list-group-item list-group-item-action bg-secondary text-white';
-            entryDiv.innerHTML = `
-                <p>${entry.text}</p>
-                ${entry.image ? `<img src="${entry.image}" alt="Entry Image">` : ''}
-                <small class="text-muted">${entry.date}</small>
-                <div class="entry-actions mt-2">
-                    <button class="btn btn-primary btn-sm edit-entry">Редактировать</button>
-                    <button class="btn btn-danger btn-sm delete-entry">Удалить</button>
-                    <button class="btn btn-secondary btn-sm share-entry">Поделиться</button>
-                </div>
-            `;
+                entryDiv.querySelector('.delete-entry').addEventListener('click', () => {
+                    entryDiv.classList.add('magictime', 'vanishOut');
+                    setTimeout(() => deleteEntry(doc.id), 1000);
+                });
 
-            entryDiv.querySelector('.delete-entry').addEventListener('click', () => {
-                entryDiv.classList.add('magictime', 'vanishOut');
-                setTimeout(() => deleteEntry(index), 1000);
+                entryDiv.querySelector('.edit-entry').addEventListener('click', () => {
+                    entryText.value = entry.text;
+                    isEditing = true;
+                    editIndex = doc.id;
+                    saveEntryButton.textContent = 'Обновить запись';
+                });
+
+                entryDiv.querySelector('.share-entry').addEventListener('click', () => {
+                    const shareUrl = `${window.location.origin}${window.location.pathname}?entryId=${doc.id}`;
+                    shareLink.value = shareUrl;
+                    $('#shareModal').modal('show');
+                });
+
+                entriesList.appendChild(entryDiv);
             });
-
-            entryDiv.querySelector('.edit-entry').addEventListener('click', () => {
-                entryText.value = entry.text;
-                isEditing = true;
-                editIndex = index;
-                saveEntryButton.textContent = 'Обновить запись';
-            });
-
-            entryDiv.querySelector('.share-entry').addEventListener('click', () => {
-                const shareUrl = `${window.location.origin}${window.location.pathname}?entryId=${entry.id}`;
-                shareLink.value = shareUrl;
-                $('#shareModal').modal('show');
-            });
-
-            entriesList.appendChild(entryDiv);
         });
     }
 
@@ -181,32 +197,24 @@ document.addEventListener('DOMContentLoaded', (event) => {
         alert('Ссылка скопирована в буфер обмена!');
     });
 
-    // Функция для просмотра записи
+    // Функция для просмотра записи по ID
     function viewEntry(entryId) {
-        const entries = JSON.parse(localStorage.getItem('entries')) || [];
-        const entry = entries.find(e => e.id === entryId);
-        if (entry) {
-            passwordLoginDiv.classList.add('d-none');
-            newEntrySection.classList.add('d-none');
-            entriesSection.classList.add('d-none');
-            viewEntrySection.classList.remove('d-none');
-            viewEntryContent.innerHTML = `
-                <p>${entry.text}</p>
-                ${entry.image ? `<img src="${entry.image}" alt="Entry Image">` : ''}
-                <small class="text-muted">${entry.date}</small>
-            `;
-        } else {
-            alert('Запись не найдена');
-        }
-    }
-
-    // Инициализация загрузки записей при запуске
-    if (!entryId && storedPassword && !passwordLoginDiv.classList.contains('d-none')) {
-        passwordLoginDiv.classList.remove('d-none');
-    } else if (!entryId) {
-        newEntrySection.classList.remove('d-none');
-        entriesSection.classList.remove('d-none');
-        loadEntries();
+        db.collection('entries').doc(entryId).get().then((doc) => {
+            if (doc.exists) {
+                const entry = doc.data();
+                passwordLoginDiv.classList.add('d-none');
+                newEntrySection.classList.add('d-none');
+                entriesSection.classList.add('d-none');
+                viewEntrySection.classList.remove('d-none');
+                viewEntryContent.innerHTML = `
+                    <p>${entry.text}</p>
+                    ${entry.image ? `<img src="${entry.image}" alt="Entry Image">` : ''}
+                    <small class="text-muted">${entry.date}</small>
+                `;
+            } else {
+                alert('Запись не найдена');
+            }
+        });
     }
 });
 
